@@ -1,14 +1,11 @@
-import { config as dotenvConfig } from 'dotenv';
 import OpenAI from "openai";
 import { PrismaClient } from "@prisma/client";
 import { conn, establishConnection } from "./lib/connection.js";
 
-dotenvConfig();
-
 const openai = new OpenAI({ apiKey: process.env.OPENAI_APIKEY });
 const prisma = new PrismaClient();
 
-let isRunning = false;
+const functionStatus = {};
 
 async function main() {
     try {
@@ -19,6 +16,29 @@ async function main() {
                 const phoneNumber = message.key.remoteJid.replace('@s.whatsapp.net', '');
                 const userMessage = message.message.extendedTextMessage?.text || message.message.conversation || '';
 
+                if (!functionStatus[phoneNumber]) {
+                    functionStatus[phoneNumber] = {
+                        isRunning: false
+                    };
+                }
+
+                if (userMessage.toLowerCase() === "nihao") {
+                    functionStatus[phoneNumber].isRunning = true;
+                    await conn.sendMessage(phoneNumber + "@s.whatsapp.net", { text: "Silakan bertanya apa saja. \n\nKetik \"bye\" untuk menghentikan sesi ini." });
+                    return;
+                }
+
+                if (userMessage.toLowerCase() === "bye") {
+                    functionStatus[phoneNumber].isRunning = false;
+                    await conn.sendMessage(phoneNumber + "@s.whatsapp.net", { text: "Sampai jumpa! Semoga harimu menyenangkan😊" });
+                    return;
+                }
+
+                if (!functionStatus[phoneNumber].isRunning) {
+                    console.log('Fungsi tidak berjalan untuk nomor telepon:', phoneNumber);
+                    return;
+                }
+
                 let messageGroup = await prisma.messageGroup.findUnique({
                     where: {
                         number: phoneNumber
@@ -27,28 +47,6 @@ async function main() {
                         message: true
                     }
                 });
-
-                if (userMessage.toLowerCase() === "nihao") {
-                    isRunning = true;
-                    await conn.sendMessage(phoneNumber + "@s.whatsapp.net", { text: "Silakan bertanya apa saja. \n\nKetik \"bye\" untuk menghentikan sesi ini." });
-                    return;
-                }
-
-                if (userMessage.toLowerCase() === "bye") {
-                    isRunning = false;
-                    await conn.sendMessage(phoneNumber + "@s.whatsapp.net", { text: "Sampai jumpa! Semoga harimu menyenangkan😊" });
-                    await prisma.message.deleteMany({
-                        where: { messageGroupId: messageGroup.id },
-                    });
-
-                    console.log("Delete Message " + messageGroup.number);
-                    return;
-                }
-
-                if (!isRunning) {
-                    console.log('Fungsi tidak berjalan. Abaikan pesan.');
-                    return;
-                }
 
                 if (!messageGroup) {
                     messageGroup = await prisma.messageGroup.create({
@@ -59,6 +57,15 @@ async function main() {
                     console.log('Created new MessageGroup');
                 } else {
                     console.log('Found MessageGroup');
+                }
+
+                if (userMessage === "delete") {
+                    await prisma.message.deleteMany({
+                        where: { messageGroupId: messageGroup.id },
+                    });
+
+                    console.log("Delete Message " + messageGroup.number);
+                    return;
                 }
 
                 if (messageGroup) {
