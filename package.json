@@ -1,0 +1,22 @@
+{
+  "name": "whatsapp-chatgpt",
+  "version": "1.0.0",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node ."
+  },
+  "type": "module",
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@prisma/client": "^5.14.0",
+    "@whiskeysockets/baileys": "^6.7.2",
+    "dotenv": "^16.4.5",
+    "openai": "^4.47.1",
+    "prisma": "^5.14.0",
+    "qrcode-terminal": "^0.12.0"
+  }
+}

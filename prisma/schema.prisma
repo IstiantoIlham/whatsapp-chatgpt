@@ -1,0 +1,24 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model MessageGroup {
+  id        Int       @id @default(autoincrement())
+  number    String    @unique
+  message   Message[]
+  createdAt DateTime  @default(now())
+}
+
+model Message {
+  id             Int           @id @default(autoincrement())
+  role           String        @db.LongText
+  content        String        @db.LongText
+  messageGroup   MessageGroup? @relation(fields: [messageGroupId], references: [id], onDelete: Cascade)
+  messageGroupId Int
+  createdAt      DateTime      @default(now())
+}
