@@ -14,7 +14,8 @@ async function main() {
             const message = m.messages[0];
             if (!message.key.fromMe && message.key.remoteJid && !message.key.remoteJid.endsWith('@g.us')) {
                 const phoneNumber = message.key.remoteJid.replace('@s.whatsapp.net', '');
-                const userMessage = message.message.extendedTextMessage?.text || message.message.conversation || '';
+                const userMessage = message.message?.extendedTextMessage?.text || message.message?.conversation || '';
+                console.log(userMessage);
 
                 if (!functionStatus[phoneNumber]) {
                     functionStatus[phoneNumber] = {
