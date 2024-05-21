@@ -13,7 +13,7 @@
   "description": "",
   "dependencies": {
     "@prisma/client": "^5.14.0",
-    "@whiskeysockets/baileys": "^6.7.2",
+    "@whiskeysockets/baileys": "github:w3nder/Baileys#patch-1",
     "dotenv": "^16.4.5",
     "openai": "^4.47.1",
     "prisma": "^5.14.0",
