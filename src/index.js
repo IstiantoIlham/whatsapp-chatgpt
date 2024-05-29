@@ -5,7 +5,26 @@ import { conn, establishConnection } from "./lib/connection.js";
 const openai = new OpenAI({ apiKey: process.env.OPENAI_APIKEY });
 const prisma = new PrismaClient();
 
-const functionStatus = {};
+async function getFunctionStatus(phoneNumber) {
+    let status = await prisma.functionStatus.findUnique({
+        where: { phoneNumber },
+    });
+
+    if (!status) {
+        status = await prisma.functionStatus.create({
+            data: { phoneNumber },
+        });
+    }
+
+    return status;
+}
+
+async function updateFunctionStatus(phoneNumber, isRunning) {
+    await prisma.functionStatus.update({
+        where: { phoneNumber },
+        data: { isRunning },
+    });
+}
 
 async function main() {
     try {
@@ -17,43 +36,33 @@ async function main() {
                 const userMessage = message.message?.extendedTextMessage?.text || message.message?.conversation || '';
                 console.log(userMessage);
 
-                if (!functionStatus[phoneNumber]) {
-                    functionStatus[phoneNumber] = {
-                        isRunning: false
-                    };
-                }
+                let functionStatus = await getFunctionStatus(phoneNumber);
 
                 if (userMessage.toLowerCase() === "nihao") {
-                    functionStatus[phoneNumber].isRunning = true;
+                    await updateFunctionStatus(phoneNumber, true);
                     await conn.sendMessage(phoneNumber + "@s.whatsapp.net", { text: "Silakan bertanya apa saja. \n\nKetik \"bye\" untuk menghentikan sesi ini." });
                     return;
                 }
 
                 if (userMessage.toLowerCase() === "bye") {
-                    functionStatus[phoneNumber].isRunning = false;
+                    await updateFunctionStatus(phoneNumber, false);
                     await conn.sendMessage(phoneNumber + "@s.whatsapp.net", { text: "Sampai jumpa! Semoga harimu menyenangkan😊" });
                     return;
                 }
 
-                if (!functionStatus[phoneNumber].isRunning) {
+                if (!functionStatus.isRunning) {
                     console.log('Fungsi tidak berjalan untuk nomor telepon:', phoneNumber);
                     return;
                 }
 
                 let messageGroup = await prisma.messageGroup.findUnique({
-                    where: {
-                        number: phoneNumber
-                    },
-                    include: {
-                        message: true
-                    }
+                    where: { number: phoneNumber },
+                    include: { message: true }
                 });
 
                 if (!messageGroup) {
                     messageGroup = await prisma.messageGroup.create({
-                        data: {
-                            number: phoneNumber,
-                        },
+                        data: { number: phoneNumber },
                     });
                     console.log('Created new MessageGroup');
                 } else {
@@ -79,12 +88,8 @@ async function main() {
                     });
 
                     messageGroup = await prisma.messageGroup.findUnique({
-                        where: {
-                            id: messageGroup.id
-                        },
-                        include: {
-                            message: true
-                        }
+                        where: { id: messageGroup.id },
+                        include: { message: true }
                     });
 
                     const messages = messageGroup.message.map(msg => ({
