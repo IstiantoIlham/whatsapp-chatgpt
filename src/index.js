@@ -44,15 +44,6 @@ async function main() {
                     return;
                 }
 
-                if (userMessage.toLowerCase() === "bye") {
-                    await updateFunctionStatus(phoneNumber, false);
-                    await prisma.message.deleteMany({
-                        where: { messageGroupId: messageGroup.id },
-                    });
-                    await conn.sendMessage(phoneNumber + "@s.whatsapp.net", { text: "Sampai jumpa! Semoga harimu menyenangkan😊" });
-                    return;
-                }
-
                 if (!functionStatus.isRunning) {
                     console.log('Fungsi tidak berjalan untuk nomor telepon:', phoneNumber);
                     return;
@@ -62,6 +53,15 @@ async function main() {
                     where: { number: phoneNumber },
                     include: { message: true }
                 });
+
+                if (userMessage.toLowerCase() === "bye") {
+                    await updateFunctionStatus(phoneNumber, false);
+                    await prisma.message.deleteMany({
+                        where: { messageGroupId: messageGroup.id },
+                    });
+                    await conn.sendMessage(phoneNumber + "@s.whatsapp.net", { text: "Sampai jumpa! Semoga harimu menyenangkan😊" });
+                    return;
+                }
 
                 if (!messageGroup) {
                     messageGroup = await prisma.messageGroup.create({
