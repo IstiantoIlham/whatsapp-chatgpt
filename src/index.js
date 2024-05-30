@@ -46,6 +46,9 @@ async function main() {
 
                 if (userMessage.toLowerCase() === "bye") {
                     await updateFunctionStatus(phoneNumber, false);
+                    await prisma.message.deleteMany({
+                        where: { messageGroupId: messageGroup.id },
+                    });
                     await conn.sendMessage(phoneNumber + "@s.whatsapp.net", { text: "Sampai jumpa! Semoga harimu menyenangkan😊" });
                     return;
                 }
@@ -67,15 +70,6 @@ async function main() {
                     console.log('Created new MessageGroup');
                 } else {
                     console.log('Found MessageGroup');
-                }
-
-                if (userMessage === "delete") {
-                    await prisma.message.deleteMany({
-                        where: { messageGroupId: messageGroup.id },
-                    });
-
-                    console.log("Delete Message " + messageGroup.number);
-                    return;
                 }
 
                 if (messageGroup) {
